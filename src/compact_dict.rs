@@ -1,6 +1,6 @@
-use super::simple_allocator_trait::{Allocator, DefaultHeap};
 use super::compact::Compact;
 use super::compact_vec::CompactVec;
+use super::simple_allocator_trait::{Allocator, DefaultHeap};
 
 /// A simple linear-search key-value dictionary,
 /// implemented using two `CompactVec`'s, one for keys, one for values.
@@ -123,17 +123,17 @@ impl<K: Eq + Copy, V: Compact + Clone, A: Allocator> CompactDict<K, V, A> {
     }
 
     /// Iterator over all keys in the dictionary
-    pub fn keys(&self) -> ::std::slice::Iter<K> {
+    pub fn keys(&self) -> ::std::slice::Iter<'_, K> {
         self.keys.iter()
     }
 
     /// Iterator over all values in the dictionary
-    pub fn values(&self) -> ::std::slice::Iter<V> {
+    pub fn values(&self) -> ::std::slice::Iter<'_, V> {
         self.values.iter()
     }
 
     /// Iterator over mutable references to all values in the dictionary
-    pub fn values_mut(&mut self) -> ::std::slice::IterMut<V> {
+    pub fn values_mut(&mut self) -> ::std::slice::IterMut<'_, V> {
         self.values.iter_mut()
     }
 
@@ -381,7 +381,7 @@ fn basic() {
 fn iter() {
     let mut map: CompactDict<usize, usize> = CompactDict::new();
     let n = 10;
-    assert!(map.is_empty() == true);
+    assert_eq!(map.is_empty(), true);
     for i in 0..n {
         map.insert(i, i * i);
     }

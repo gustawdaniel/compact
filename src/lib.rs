@@ -14,16 +14,16 @@
 //!     such as actors, threads and the network
 
 #![warn(missing_docs)]
-#![feature(specialization)]
+#![feature(min_specialization)]
 
 extern crate simple_allocator_trait;
-mod pointer_to_maybe_compact;
 mod compact;
-mod compact_option;
-mod compact_vec;
-mod compact_str;
 mod compact_dict;
 mod compact_hash_map;
+mod compact_option;
+mod compact_str;
+mod compact_vec;
+mod pointer_to_maybe_compact;
 
 #[macro_use]
 extern crate lazy_static;
@@ -32,8 +32,8 @@ extern crate lazy_static;
 extern crate serde;
 
 pub use self::compact::Compact;
-pub use self::compact_option::CompactOption as COption;
-pub use self::compact_vec::CompactVec as CVec;
-pub use self::compact_str::CompactString as CString;
 pub use self::compact_dict::CompactDict as CDict;
 pub use self::compact_hash_map::OpenAddressingMap as CHashMap;
+pub use self::compact_option::CompactOption as COption;
+pub use self::compact_str::CompactString as CString;
+pub use self::compact_vec::CompactVec as CVec;

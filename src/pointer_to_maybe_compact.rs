@@ -12,14 +12,14 @@ enum Inner {
 /// See Inner
 pub struct PointerToMaybeCompact<T> {
     inner: Inner,
-    marker: ::std::marker::PhantomData<*mut T>
+    marker: ::std::marker::PhantomData<*mut T>,
 }
 
 impl<T> Default for PointerToMaybeCompact<T> {
     fn default() -> PointerToMaybeCompact<T> {
         PointerToMaybeCompact {
             inner: Inner::Uninitialized,
-            marker: ::std::marker::PhantomData
+            marker: ::std::marker::PhantomData,
         }
     }
 }
@@ -35,7 +35,7 @@ impl<T> PointerToMaybeCompact<T> {
     pub fn new_free(ptr: *mut T) -> Self {
         PointerToMaybeCompact {
             inner: Inner::Free(ptr as u64),
-            marker: ::std::marker::PhantomData
+            marker: ::std::marker::PhantomData,
         }
     }
 
@@ -53,7 +53,9 @@ impl<T> PointerToMaybeCompact<T> {
     pub unsafe fn ptr(&self) -> *const T {
         match self.inner {
             Inner::Free(ptr) => ptr as *const T,
-            Inner::Compact(offset) => (self as *const Self as *const u8).offset(offset as isize) as *const T,
+            Inner::Compact(offset) => {
+                (self as *const Self as *const u8).offset(offset as isize) as *const T
+            }
             Inner::Uninitialized => ::std::ptr::null(),
         }
     }
@@ -62,7 +64,9 @@ impl<T> PointerToMaybeCompact<T> {
     pub unsafe fn mut_ptr(&mut self) -> *mut T {
         match self.inner {
             Inner::Free(ptr) => ptr as *mut T,
-            Inner::Compact(offset) => (self as *mut Self as *mut u8).offset(offset as isize) as *mut T,
+            Inner::Compact(offset) => {
+                (self as *mut Self as *mut u8).offset(offset as isize) as *mut T
+            }
             Inner::Uninitialized => ::std::ptr::null_mut(),
         }
     }

@@ -60,7 +60,7 @@ impl Compact for CompactString {
 use std::marker::PhantomData;
 
 #[cfg(feature = "serde-serialization")]
-impl ::serde::ser::Serialize for CompactString{
+impl ::serde::ser::Serialize for CompactString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ::serde::ser::Serializer,
@@ -71,21 +71,20 @@ impl ::serde::ser::Serialize for CompactString{
 
 #[cfg(feature = "serde-serialization")]
 struct CompactStringVisitor {
-    marker: PhantomData<fn() -> CompactString>
+    marker: PhantomData<fn() -> CompactString>,
 }
 
 #[cfg(feature = "serde-serialization")]
 impl CompactStringVisitor {
     fn new() -> Self {
         CompactStringVisitor {
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 }
 
 #[cfg(feature = "serde-serialization")]
-impl<'de> ::serde::de::Visitor<'de> for CompactStringVisitor
-{
+impl<'de> ::serde::de::Visitor<'de> for CompactStringVisitor {
     type Value = CompactString;
 
     fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
@@ -108,9 +107,7 @@ impl<'de> ::serde::de::Visitor<'de> for CompactStringVisitor
 }
 
 #[cfg(feature = "serde-serialization")]
-impl<'de> ::serde::de::Deserialize<'de> for CompactString
-
-{
+impl<'de> ::serde::de::Deserialize<'de> for CompactString {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: ::serde::de::Deserializer<'de>,

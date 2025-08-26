@@ -1,10 +1,10 @@
-use super::simple_allocator_trait::{Allocator, DefaultHeap};
-use super::pointer_to_maybe_compact::PointerToMaybeCompact;
 use super::compact::Compact;
-use std::marker::PhantomData;
-use std::ptr;
-use std::ops::{Deref, DerefMut};
+use super::pointer_to_maybe_compact::PointerToMaybeCompact;
+use super::simple_allocator_trait::{Allocator, DefaultHeap};
 use std::iter::FromIterator;
+use std::marker::PhantomData;
+use std::ops::{Deref, DerefMut};
+use std::ptr;
 
 /// A dynamically-sized vector that can be stored in compact sequential storage and
 /// automatically spills over into free heap storage using `Allocator`.
@@ -284,7 +284,7 @@ impl<T, A: Allocator> Deref for CompactVec<T, A> {
 
     fn deref(&self) -> &[T] {
         if unsafe { self.ptr.ptr().is_null() } {
-            unsafe { ::std::slice::from_raw_parts(0x1 as *const T, 0) }
+            &[] // empty slice
         } else {
             unsafe { ::std::slice::from_raw_parts(self.ptr.ptr(), self.len as usize) }
         }
@@ -294,7 +294,7 @@ impl<T, A: Allocator> Deref for CompactVec<T, A> {
 impl<T, A: Allocator> DerefMut for CompactVec<T, A> {
     fn deref_mut(&mut self) -> &mut [T] {
         if unsafe { self.ptr.ptr().is_null() } {
-            unsafe { ::std::slice::from_raw_parts_mut(0x1 as *mut T, 0) }
+            &mut [] // safe zero-length mutable slice
         } else {
             unsafe { ::std::slice::from_raw_parts_mut(self.ptr.mut_ptr(), self.len as usize) }
         }
@@ -395,7 +395,7 @@ impl<T: Compact + Clone, A: Allocator> Compact for CompactVec<T, A> {
             let size_of_this_item = item.dynamic_size_bytes();
             Compact::compact(
                 item,
-                &mut (*dest)[i],
+                &mut (&mut (*dest))[i],
                 new_dynamic_part.offset(offset as isize),
             );
             offset += size_of_this_item;
@@ -403,7 +403,9 @@ impl<T: Compact + Clone, A: Allocator> Compact for CompactVec<T, A> {
 
         // we want to free any allocated space,
         // but not semantically drop our contents (they just moved)
-        (*source).ptr.deallocate_if_free::<A>((*source).cap as usize);
+        (*source)
+            .ptr
+            .deallocate_if_free::<A>((*source).cap as usize);
     }
 
     default unsafe fn decompact(source: *const Self) -> Self {
@@ -446,7 +448,9 @@ impl<T: Copy, A: Allocator> Compact for CompactVec<T, A> {
 
         // we want to free any allocated space,
         // but not semantically drop our contents (they just moved)
-        (*source).ptr.deallocate_if_free::<A>((*source).cap as usize);
+        (*source)
+            .ptr
+            .deallocate_if_free::<A>((*source).cap as usize);
     }
 }
 
@@ -499,13 +503,13 @@ impl<T: Compact + ::std::fmt::Debug, A: Allocator> ::std::fmt::Debug for Compact
 }
 
 #[cfg(feature = "serde-serialization")]
-use ::serde::ser::SerializeSeq;
+use serde::ser::SerializeSeq;
 
 #[cfg(feature = "serde-serialization")]
 impl<T, A> ::serde::ser::Serialize for CompactVec<T, A>
 where
     T: Compact + ::serde::ser::Serialize,
-    A: Allocator
+    A: Allocator,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -521,14 +525,14 @@ where
 
 #[cfg(feature = "serde-serialization")]
 struct CompactVecVisitor<T, A: Allocator> {
-    marker: PhantomData<fn() -> CompactVec<T, A>>
+    marker: PhantomData<fn() -> CompactVec<T, A>>,
 }
 
 #[cfg(feature = "serde-serialization")]
 impl<T, A: Allocator> CompactVecVisitor<T, A> {
     fn new() -> Self {
         CompactVecVisitor {
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 }
@@ -537,7 +541,7 @@ impl<T, A: Allocator> CompactVecVisitor<T, A> {
 impl<'de, T, A> ::serde::de::Visitor<'de> for CompactVecVisitor<T, A>
 where
     T: Compact + ::serde::de::Deserialize<'de>,
-    A: Allocator
+    A: Allocator,
 {
     type Value = CompactVec<T, A>;
 
@@ -563,7 +567,7 @@ where
 impl<'de, T, A> ::serde::de::Deserialize<'de> for CompactVec<T, A>
 where
     T: Compact + ::serde::de::Deserialize<'de>,
-    A: Allocator
+    A: Allocator,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -615,8 +619,8 @@ fn nested_vector() {
     unsafe {
         Compact::compact_behind(&mut list_of_lists, storage as *mut NestedType);
         ::std::mem::forget(list_of_lists);
-        assert_eq!(&[1, 2, 3], &*(*(storage as *mut NestedType))[0]);
-        assert_eq!(&[4, 5, 6, 7, 8, 9], &*(*(storage as *mut NestedType))[1]);
+        assert_eq!(&[1, 2, 3], &*(&(*(storage as *mut NestedType)))[0]);
+        assert_eq!(&[4, 5, 6, 7, 8, 9], &*(&(*(storage as *mut NestedType)))[1]);
         println!("before decompact!");
         let decompacted = Compact::decompact(storage as *mut NestedType);
         println!("after decompact!");

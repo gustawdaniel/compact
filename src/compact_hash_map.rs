@@ -204,14 +204,14 @@ impl<K: Copy, V: Copy> Compact for Entry<K, V> {
 }
 
 lazy_static! {
-    static ref PRIME_SIEVE: primal::Sieve = { primal::Sieve::new(1_000_000) };
+    static ref PRIME_SIEVE: primal::Sieve = primal::Sieve::new(1_000_000);
 }
 
 impl<'a, K: Copy, V: Compact, A: Allocator> QuadraticProbingIterator<'a, K, V, A> {
     fn for_map(
         map: &'a OpenAddressingMap<K, V, A>,
         hash: u32,
-    ) -> QuadraticProbingIterator<K, V, A> {
+    ) -> QuadraticProbingIterator<'a, K, V, A> {
         QuadraticProbingIterator {
             i: 0,
             number_used: map.entries.capacity(),
@@ -225,7 +225,7 @@ impl<'a, K: Copy, V: Compact, A: Allocator> QuadraticProbingMutIterator<'a, K, V
     fn for_map(
         map: &'a mut OpenAddressingMap<K, V, A>,
         hash: u32,
-    ) -> QuadraticProbingMutIterator<K, V, A> {
+    ) -> QuadraticProbingMutIterator<'a, K, V, A> {
         QuadraticProbingMutIterator {
             i: 0,
             number_used: map.entries.capacity(),
@@ -454,11 +454,11 @@ impl<K: Copy + Eq + Hash, V: Compact, A: Allocator> OpenAddressingMap<K, V, A> {
         None
     }
 
-    fn quadratic_iterator(&self, query: K) -> QuadraticProbingIterator<K, V, A> {
+    fn quadratic_iterator(&self, query: K) -> QuadraticProbingIterator<'_, K, V, A> {
         QuadraticProbingIterator::for_map(self, Self::hash(query))
     }
 
-    fn quadratic_iterator_mut(&mut self, hash: u32) -> QuadraticProbingMutIterator<K, V, A> {
+    fn quadratic_iterator_mut(&mut self, hash: u32) -> QuadraticProbingMutIterator<'_, K, V, A> {
         QuadraticProbingMutIterator::for_map(self, hash)
     }
 
@@ -747,7 +747,8 @@ fn iter() {
             keys.find(|&i| {
                 println!("find {:?} {:?}", i, n);
                 *i == n
-            }).is_some(),
+            })
+            .is_some(),
             "fail n {:?} ",
             n
         );
@@ -878,13 +879,12 @@ fn compact_notcopy() {
 
     let mut map: NestedType = OpenAddressingMap::new();
     let assert_fun = |map: &NestedType, t: usize| {
-        assert!(
-            map.get(t)
-                .unwrap()
-                .into_iter()
-                .find(|i| **i == elem(t))
-                .is_some()
-        )
+        assert!(map
+            .get(t)
+            .unwrap()
+            .into_iter()
+            .find(|i| **i == elem(t))
+            .is_some())
     };
 
     for n in 0..1000 {
